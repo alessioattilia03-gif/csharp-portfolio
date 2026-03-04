@@ -1,61 +1,72 @@
 # 🛡️ C# Portfolio | Alessio Attilia
 
 [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![.NET Core](https://img.shields.io/badge/.NET%20Core-5C2D91?style=for-the-badge&logo=.net&logoColor=white)](https://dotnet.microsoft.com/download)
-[![Cybersecurity](https://img.shields.io/badge/Cybersecurity-Red?style=for-the-badge&logo=guardsman&logoColor=white)](#)
-[![AI Ready](https://img.shields.io/badge/AI%20Optimization-7aa2f7?style=for-the-badge&logo=openai&logoColor=white)](#)
+[![.NET](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)](https://dotnet.microsoft.com/download)
+[![Security](https://img.shields.io/badge/Security-Focus-red?style=for-the-badge&logo=codacy&logoColor=white)](#)
+[![AI-Assisted](https://img.shields.io/badge/AI--Optimized-Prompt--Eng-7aa2f7?style=for-the-badge&logo=openai&logoColor=white)](#)
 
-Benvenuti nel mio repository dedicato allo sviluppo in **C#**. Questo spazio non è solo una raccolta di esercizi, ma un percorso di crescita ingegneristica focalizzato su **Secure Coding**, **Model-Driven Engineering (MDE)** e l'ottimizzazione dei processi tramite **Prompt Engineering**.
-
----
-
-## 📂 Struttura del Workspace
-
-Il repository è organizzato in moduli progressivi. Ogni modulo affronta una sfida tecnica specifica con un approccio orientato alla sicurezza.
-
-### [01] Logic & Data Structures 🧠
-Focalizzato sulla gestione dei dati e sulla prevenzione dei crash a runtime.
-* [cite_start]**Network Traffic Analyzer**: Gestione di blacklist tramite Array e Dictionary con logica di ricerca sicura[cite: 1, 2, 21].
-* [cite_start]**Quarantine Log System**: Implementazione di cicli `for` inversi per la manipolazione sicura di liste dinamiche[cite: 10, 14, 15].
-* [cite_start]**AI Anomaly Scorer**: Scansione di matrici multidimensionali e parsing sicuro dei dati tramite `TryParse`[cite: 30, 31, 41].
-* [cite_start]**Data Cleaning Pipeline**: Normalizzazione di input sporchi e gestione dei tipi Nullable per sistemi di lockout[cite: 48, 49, 57].
-
-### [02] Object Oriented Programming (OOP) 🏗️
-*(In fase di sviluppo)*
-Implementazione di pattern architetturali N-Tier, Ereditarietà e Interfacce per sistemi scalabili.
-
-### [03] File System & Security 📁
-*(In fase di sviluppo)*
-Gestione dell'I/O sicuro, protezione dei file e logiche di logging crittografato.
+Benvenuti nel mio spazio di sviluppo. Questo repository raccoglie moduli ingegneristici in C# progettati secondo il paradigma della **Security by Design**. Ogni esercizio non è una semplice esecuzione di algoritmi, ma una dimostrazione di come gestire dati sensibili, prevenire crash di sistema e validare input in ambienti critici.
 
 ---
 
-## 🛠️ Tech Highlight: Secure Coding Logic
+## 🏛️ Architettura e Metodologia
 
-Ecco un esempio della logica applicata negli esercizi per prevenire vulnerabilità comuni:
+Il mio approccio integra i principi del **Model-Driven Engineering (MDE)** per garantire l'affidabilità strutturale del software. Utilizzo sistematicamente strumenti di **AI Generativa (Prompt Engineering)** per il "rubber ducking" tecnico, ottimizzando la logica di debugging e la pulizia del codice.
 
-| Modulo | Problema di Sicurezza | Soluzione Implementata |
+
+
+---
+
+## 📂 Moduli Tecnici Disponibili
+
+### 1. Threat & Network Analyzer 🌐
+**Focus: Gestione delle Collezioni e Validazione Protocolli**
+Questo modulo simula un sistema di monitoraggio del traffico di rete.
+* **Blacklist Filter**: Ricerca ad alte prestazioni su Array di IP malevoli.
+* **Quarantine System**: Manipolazione sicura di liste di minacce tramite cicli for inversi (prevenzione crash durante la rimozione di elementi).
+* **Attack Mapping**: Utilizzo di `Dictionary` per il tracciamento in tempo reale della frequenza degli attacchi per IP.
+* **Protocol Integrity**: Validazione rigorosa degli indirizzi IPv4 tramite parsing degli ottetti.
+
+### 2. AIScanner & Anomaly Scorer 🤖
+**Focus: Matrici e Safe Parsing**
+Analisi di matrici di server per il rilevamento di porte aperte e classificazione della gravità delle minacce.
+* **Matrix Scan**: Scansione dinamica di matrici multidimensionali con controllo dei limiti (Out-of-Bounds prevention).
+* **Severity Evaluation**: Algoritmi di scoring che utilizzano `double.TryParse` per prevenire eccezioni di formattazione durante l'input utente.
+
+### 3. Data Cleaning Pipeline 🧹
+**Focus: Sanitizzazione Input e Nullable Types**
+Simulazione di un backend che riceve dati sporchi o incompleti.
+* **Sanitizzazione Estrema**: Pulizia di stringhe (trim, null-check, literal-check) per garantire l'integrità dei dati nel database.
+* **Lockout Logic**: Utilizzo di **Nullable Types** (`int?`) per gestire in modo sicuro i tentativi di login falliti, prevenendo `NullReferenceException`.
+* **Log Extraction**: Parsing di stringhe strutturate (split log) con validazione della lunghezza dell'array.
+
+### 4. Secure Logs Auditor 📑
+**Focus: File System I/O e Resource Management**
+Un sistema di auditing che scrive, legge e archivia eventi di sicurezza su disco.
+* **Resource Handling**: Utilizzo dello statement `using` per garantire il rilascio immediato degli handle dei file.
+* **Error Auditing**: Gestione granulare delle eccezioni (`UnauthorizedAccessException`, `IOException`) per evitare fughe di informazioni o crash di sistema.
+* **File Sharing Logic**: Configurazione di `FileShare.ReadWrite` per permettere l'archiviazione dei log anche durante la scrittura attiva.
+
+---
+
+## 🛠️ Security Highlights (Codice Blindato)
+
+| Funzionalità | Rischio Prevenuto | Tecnica Utilizzata |
 | :--- | :--- | :--- |
-| **Network Analyzer** | Input accidentale con spazi o caratteri sporchi | [cite_start]Sanitizzazione tramite `.Trim()` prima del confronto[cite: 7, 8]. |
-| **Quarantine System** | Crash durante la rimozione di elementi da una lista | [cite_start]Iterazione inversa `Count - 1` per mantenere l'integrità dell'indice[cite: 13, 14]. |
-| **AI Scorer** | Crash da conversione di tipi errati (Format Exception) | [cite_start]Utilizzo rigoroso di `double.TryParse` con gestione dell'errore[cite: 41, 43]. |
-| **Lockout System** | Null Reference Exception su dati mancanti | [cite_start]Implementazione di `Nullable Types` (`int?`) con controllo `.HasValue`[cite: 58, 60, 61]. |
+| **Input Utente** | Code Injection / Format Error | `TryParse` e `.Trim()` sistematico. |
+| **Rimozione Elementi** | IndexOutOfRangeException | Ciclo `for` decrementale. |
+| **Accesso File** | File Lock / Denied Access | Blocchi `try-catch` e `FileShare` mode. |
+| **Stato Variabili** | Inconsistenza Dati | `Nullable Types` con controllo `.HasValue`. |
 
 ---
 
-## 📈 Metodologia di Sviluppo
-
-Il mio approccio si basa su tre pilastri fondamentali:
-1.  **Rigore Ingegneristico**: Applicazione dei concetti di tesi MDE per ridurre l'incertezza del codice.
-2.  **Efficienza Generativa**: Integrazione di strumenti di AI tramite Prompt Engineering avanzato per velocizzare il debugging e l'ottimizzazione degli algoritmi.
-3.  **Sicurezza Predittiva**: Scrittura di codice che prevede e gestisce scenari di input malevolo o errato.
+## 🔗 Collegamenti Rapidi
+* **[🌐 Portfolio Web (Stile IDE)](https://alessioattilia03-gif.github.io)**
+* **[📄 Download CV Completo](https://alessioattilia03-gif.github.io/cv_professional.pdf)**
+* **[💼 Profilo LinkedIn](https://linkedin.com/in/alessio-attilia)**
 
 ---
-
-## 🌐 Navigazione Rapida
-* [← Torna al Sito Portfolio (IDE Style)](https://alessioattilia03-gif.github.io)
-* [Scarica il mio CV Professionale](https://alessioattilia03-gif.github.io/cv_professional.pdf)
-* [Contattami su LinkedIn](https://linkedin.com/in/alessio-attilia)
+*Progettato con rigore ingegneristico. Ultimo aggiornamento: Marzo 2026.*
 
 ---
 *Ultimo aggiornamento: Marzo 2026. Sviluppato con passione e precisione.*

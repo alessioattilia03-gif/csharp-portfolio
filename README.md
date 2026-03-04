@@ -1,5 +1,4 @@
-# 🛡️ C# Professional Portfolio | Alessio Attilia
-> **Software & Security Engineer** | Incoming MSc in Artificial Intelligence @ Unimarconi (Sept. 2026)
+# 🛡️ C# Portfolio | Alessio Attilia
 
 [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![.NET Core](https://img.shields.io/badge/.NET%20Core-5C2D91?style=for-the-badge&logo=.net&logoColor=white)](https://dotnet.microsoft.com/download)

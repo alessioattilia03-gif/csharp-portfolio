@@ -9,14 +9,6 @@ Benvenuti nel mio spazio di sviluppo. Questo repository raccoglie moduli ingegne
 
 ---
 
-## 🏛️ Architettura e Metodologia
-
-Il mio approccio integra i principi del **Model-Driven Engineering (MDE)** per garantire l'affidabilità strutturale del software. Utilizzo sistematicamente strumenti di **AI Generativa (Prompt Engineering)** per il "rubber ducking" tecnico, ottimizzando la logica di debugging e la pulizia del codice.
-
-
-
----
-
 ## 📂 Moduli Tecnici Disponibili
 
 ### 1. Threat & Network Analyzer 🌐
@@ -66,7 +58,4 @@ Un sistema di auditing che scrive, legge e archivia eventi di sicurezza su disco
 * **[💼 Profilo LinkedIn](https://linkedin.com/in/alessio-attilia)**
 
 ---
-*Progettato con rigore ingegneristico. Ultimo aggiornamento: Marzo 2026.*
-
----
-*Ultimo aggiornamento: Marzo 2026. Sviluppato con passione e precisione.*
+*Ultimo aggiornamento: Marzo 2026.*

@@ -60,15 +60,15 @@ OfficinaManager/
 
 | Login | Dashboard Admin |
 |-------|-----------------|
-| ![Login](Screenshots/Login.png) | ![Dashboard Admin](Screenshots/Dashboard_Admin.png) |
+| ![Login](Progetto_Officina/docs/Screenshots/Login.png) | ![Dashboard Admin](Progetto_Officina/docs/Screenshots/Dashboard_Admin.png) |
 
 | Gestione Personale | Gestione Clienti |
 |--------------------|------------------|
-| ![Gestione Personale](Screenshots/GestionePersonale_Admin.png) | ![Gestione Clienti](Screenshots/GestioneClienti_Admin.png) |
+| ![Gestione Personale](Progetto_Officina/docs/Screenshots/GestionePersonale_Admin.png) | ![Gestione Clienti](Progetto_Officina/docs/Screenshots/GestioneClienti_Admin.png) |
 
 | Dashboard Meccanico |
 |---------------------|
-| ![Dashboard Meccanico](Screenshots/Dashboard_Meccanico.png) |
+| ![Dashboard Meccanico](Progetto_Officina/docs/Screenshots/Dashboard_Meccanico.png) |
 
 ---
 

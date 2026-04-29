@@ -1,0 +1,32 @@
+﻿@* --- SYSTEM & MICROSOFT NAMESPACES --- *@
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+@* --- PROJECT NAMESPACES --- *@
+@using OffinicinaShared
+@using OfficinaManagerClient
+@using Officina.Client.Components
+@using Officina.Client.Components.Layout
+@using Officina.Client.Components.Pages
+@using Officina.Client.Services.Interfaces
+
+@* --- UTILITY INJECTIONS --- *@
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+@* --- CUSTOM SERVICE INJECTIONS --- *@
+@inject IClienteService ClienteService
+@inject IInterventoService InterventoService
+@inject IUtenteService UtenteService
+@inject IVeicoloService VeicoloService

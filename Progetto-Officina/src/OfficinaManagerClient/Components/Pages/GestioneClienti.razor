@@ -1,0 +1,386 @@
+﻿@page "/GestioneClienti"
+@attribute [Authorize(Roles = "Admin,admin")]
+@inject ILogger<GestioneClienti> Logger
+
+<PageTitle>Clienti & Veicoli</PageTitle>
+
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="nm-page-title">Dati Clienti</div>
+    </div>
+
+    <div class="d-flex gap-3 align-items-center">
+        <div class="input-group nm-search-group">
+            <span class="input-group-text nm-search-icon">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control nm-input nm-search-input"
+                   placeholder="Cerca nome, cognome o targa..."
+                   @bind="TestoRicerca" @bind:event="oninput">
+        </div>
+
+        <button class="nm-button nm-button-icon" @onclick="ApriModalNuovo">
+            <i class="bi bi-person-plus"></i> Crea Nuovo Cliente
+        </button>
+    </div>
+</div>
+
+<hr class="nm-divider-clean" />
+
+<div class="nm-panel" style="padding: 0;">
+    <div class="nm-table-wrapper">
+        <table class="nm-table">
+            <thead>
+                <tr class="nm-thead-row">
+                    <th class="nm-th-styled" style="width: 220px;">Cliente</th>
+                    <th class="nm-th-styled" style="width: 200px;">Contatti</th>
+                    <th class="nm-th-styled">Targhe associate</th>
+                    <th class="nm-th-styled" style="width: 190px; text-align: right;">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (clientiVisualizzati == null || !clientiVisualizzati.Any())
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="nm-empty-state">
+                                <i class="bi bi-people"></i>
+                                Nessun cliente trovato
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var cliente in clientiVisualizzati)
+                    {
+                        <tr class="nm-table-row">
+                            <td class="nm-td-compact">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="nm-avatar-initials">
+                                        @(string.Concat(
+                                            cliente.Nome?.Length > 0 ? cliente.Nome[0].ToString().ToUpper() : "",
+                                            cliente.Cognome?.Length > 0 ? cliente.Cognome[0].ToString().ToUpper() : ""
+                                        ))
+                                    </div>
+                                    <div>
+                                        <div class="nm-td-bold">@cliente.Nome @cliente.Cognome</div>
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                            Cod: @cliente.Codice
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="nm-td-compact">
+                                <div class="nm-contact-line">
+                                    <i class="bi bi-telephone"></i>
+                                    <span>@cliente.Telefono</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(cliente.Email))
+                                {
+                                    <div class="nm-contact-line nm-contact-secondary">
+                                        <i class="bi bi-envelope"></i>
+                                        <span>@cliente.Email</span>
+                                    </div>
+                                }
+                            </td>
+                            <td class="nm-td-compact">
+                                @if (cliente.Veicoli != null && cliente.Veicoli.Any())
+                                {
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        @foreach (var targa in cliente.Veicoli)
+                                        {
+                                            <span class="nm-badge-targa">@targa</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="nm-td-muted" style="font-size: 13px;">
+                                        <i class="bi bi-dash-circle" style="opacity: 0.4; margin-right: 4px;"></i>
+                                        Nessun veicolo
+                                    </span>
+                                }
+                            </td>
+                            <td class="nm-td-compact nm-td-action" style="text-align: right;">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="nm-btn-action" @onclick="() => ApriModalModifica(cliente)">
+                                        <i class="bi bi-pencil-square"></i> Modifica
+                                    </button>
+                                    <button class="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                                            style="border-radius: 8px; padding: 6px 12px; font-weight: 500;"
+                                            @onclick="() => EliminaCliente(cliente.Codice)">
+                                        <i class="bi bi-trash3-fill"></i> Elimina
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (mostraModal)
+{
+    <div class="nm-modal-overlay">
+        <div class="nm-panel nm-panel-padded nm-modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="nm-page-title nm-modal-title">
+                    @(isEditing ? "Modifica Cliente" : "Nuovo Cliente")
+                </div>
+            </div>
+
+            @if (erroreSalvataggio)
+            {
+                <div class="nm-error mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Errore di comunicazione con il server.
+                </div>
+            }
+
+            <EditForm Model="nuovoCliente" OnValidSubmit="SalvaCliente">
+                <div class="d-flex gap-3 mb-3">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Nome *</label>
+                        <InputText @bind-Value="nuovoCliente.Nome" class="nm-input" required />
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Cognome *</label>
+                        <InputText @bind-Value="nuovoCliente.Cognome" class="nm-input" required />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mb-3">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Telefono *</label>
+                        <InputText @bind-Value="nuovoCliente.Telefono" class="nm-input" required />
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Email</label>
+                        <InputText type="email" @bind-Value="nuovoCliente.Email" class="nm-input" />
+                    </div>
+                </div>
+
+                @if (!isEditing)
+                {
+                    <div class="nm-input-group mb-4">
+                        <label class="nm-label">Targa Primo Veicolo (Opzionale)</label>
+                        <InputText @bind-Value="nuovoCliente.NuovaTarga" class="nm-input" style="text-transform: uppercase;" placeholder="Es. AB123CD" />
+                    </div>
+                }
+
+                <div class="nm-input-group mb-4">
+                    <label class="nm-label">Indirizzo</label>
+                    <InputText @bind-Value="nuovoCliente.Indirizzo" class="nm-input" />
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border);">
+                    <button type="button" class="nm-btn-ghost" @onclick="ChiudiModal" disabled="@isSaving">
+                        Annulla
+                    </button>
+                    <button type="submit" class="nm-button nm-button-icon" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        @(isEditing ? "Aggiorna Dati" : "Crea Cliente")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<OffinicinaShared.ClienteDTO> clientiTotali = new();
+    private List<OffinicinaShared.ClienteDTO> clientiVisualizzati = new();
+
+    private string _testoRicerca = string.Empty;
+    public string TestoRicerca
+    {
+        get => _testoRicerca;
+        set
+        {
+            _testoRicerca = value;
+            ApplicaFiltro();
+        }
+    }
+
+    private bool mostraModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private bool erroreSalvataggio = false;
+    private OffinicinaShared.ClienteDTO nuovoCliente = new();
+    
+    // variabile per mostrare messaggi semplici e chiari a chi usa l'app
+    private string messaggioFeedback = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // appena si apre la pagina vado a recuperare tutti i clienti registrati
+        await CaricaDati();
+    } // fine inizializzazione pagina
+
+    private async Task CaricaDati()
+    {
+        try
+        {
+            // chiamo il service e metto i dati nella lista principale
+            var dati = await ClienteService.CercaTutti();
+            
+            if (dati != null && dati.Any())
+            {
+                clientiTotali = dati.ToList();
+            }
+            else
+            {
+                // se non ci sono dati evito il null e tengo la lista vuota
+                Logger.LogDebug("mock dati attivo per lista vuota.");
+                clientiTotali = new List<OffinicinaShared.ClienteDTO>();
+            }
+
+            // applico subito il filtro così la tabella si aggiorna
+            ApplicaFiltro();
+        }
+        catch (Exception ex)
+        {
+            // avviso l'utente che c'è stato un intoppo nel recupero dei dati
+            messaggioFeedback = "ops! ho avuto un problema a caricare i clienti. controlla la connessione.";
+            Logger.LogError(ex, "errore durante il recupero dei dati.");
+        }
+    } // fine recupero e preparazione dati
+
+    private void ApplicaFiltro()
+    {
+        if (string.IsNullOrWhiteSpace(_testoRicerca))
+        {
+            // se non sto scrivendo nulla nella barra cerco, faccio vedere tutti
+            clientiVisualizzati = clientiTotali.ToList();
+        }
+        else
+        {
+            // filtro i clienti per nome, cognome o targa ignorando maiuscole e minuscole
+            clientiVisualizzati = clientiTotali.Where(x =>
+                (x.Nome != null && x.Nome.Contains(_testoRicerca, StringComparison.OrdinalIgnoreCase)) ||
+                (x.Cognome != null && x.Cognome.Contains(_testoRicerca, StringComparison.OrdinalIgnoreCase)) ||
+                (x.Veicoli != null && x.Veicoli.Any(v => v.Contains(_testoRicerca, StringComparison.OrdinalIgnoreCase)))
+            ).ToList();
+        }
+    } // fine logica di filtraggio dinamico
+
+    private void ApriModalNuovo()
+    {
+        // pulisco tutto per inserire un nuovo cliente da zero
+        messaggioFeedback = "";
+        erroreSalvataggio = false;
+        isEditing = false;
+        nuovoCliente = new OffinicinaShared.ClienteDTO();
+        mostraModal = true;
+    } // fine preparazione modale inserimento
+
+    private void ApriModalModifica(OffinicinaShared.ClienteDTO cliente)
+    {
+        // carico i dati del cliente selezionato per poterli modificare
+        messaggioFeedback = "";
+        erroreSalvataggio = false;
+        isEditing = true;
+        
+        nuovoCliente = new OffinicinaShared.ClienteDTO
+        {
+            Codice = cliente.Codice,
+            Nome = cliente.Nome,
+            Cognome = cliente.Cognome,
+            Telefono = cliente.Telefono,
+            Email = cliente.Email,
+            Indirizzo = cliente.Indirizzo,
+            Veicoli = cliente.Veicoli != null ? new List<string>(cliente.Veicoli) : new List<string>()
+        };
+        mostraModal = true;
+    } // fine preparazione modale modifica
+
+    private void ChiudiModal()
+    {
+        // chiudo il popup e basta
+        mostraModal = false;
+    } // fine chiusura modale
+
+    private async Task SalvaCliente()
+    {
+        isSaving = true;
+        erroreSalvataggio = false;
+        messaggioFeedback = "";
+        
+        try
+        {
+            bool successo = false;
+
+            if (isEditing)
+            {
+                // se sto modificando chiamo il metodo di update
+                successo = await ClienteService.Aggiorna(nuovoCliente);
+            }
+            else
+            {
+                // se è un profilo nuovo uso l'inserimento
+                successo = await ClienteService.Inserisci(nuovoCliente);
+            }
+
+            if (successo)
+            {
+                // se il database ha accettato i dati, confermo all'utente e ricarico tutto
+                messaggioFeedback = "perfetto! cliente salvato correttamente.";
+                mostraModal = false;
+                await CaricaDati();
+            }
+            else
+            {
+                // se il server dà errore, chiedo di ricontrollare i dati
+                messaggioFeedback = "attenzione: non sono riuscito a salvare. controlla se i dati sono corretti.";
+                erroreSalvataggio = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // messaggio di emergenza se succede un errore tecnico imprevisto
+            messaggioFeedback = "accidenti, c'è stato un errore tecnico durante il salvataggio.";
+            Logger.LogError(ex, "errore salvataggio cliente.");
+            erroreSalvataggio = true;
+        }
+        finally
+        {
+            // tolgo lo stato di caricamento dal bottone
+            isSaving = false;
+        }
+    } // fine logica di salvataggio/aggiornamento cliente
+
+    private async Task EliminaCliente(string? codice)
+    {
+        // se non c'è il codice non faccio nulla per evitare errori stupidi
+        if (string.IsNullOrWhiteSpace(codice)) return;
+        
+        try
+        {
+            // provo a cancellare il cliente tramite il service
+            var successo = await ClienteService.Elimina(codice);
+            
+            if (successo)
+            {
+                // se la cancellazione va a buon fine avviso l'utente e aggiorno la tabella
+                messaggioFeedback = "cliente rimosso con successo dall'anagrafica.";
+                await CaricaDati();
+            }
+            else
+            {
+                messaggioFeedback = "non posso eliminare questo cliente. forse è collegato a dei lavori attivi?";
+            }
+        }
+        catch (Exception ex)
+        {
+            // feedback se il server non risponde o dà errore durante l'eliminazione
+            messaggioFeedback = "errore: non sono riuscito a eliminare il cliente selezionato.";
+            Logger.LogError(ex, "errore eliminazione cliente codice: {codice}", codice);
+        }
+    } // fine eliminazione cliente
+}

@@ -1,0 +1,36 @@
+﻿@inherits LayoutComponentBase
+
+<div class="nm-app">
+    <div class="nm-body">
+
+        <aside class="nm-sidebar d-flex flex-column p-0">
+            <NavMenu />
+        </aside>
+
+        <main class="nm-main d-flex flex-column">
+            <header class="nm-topbar" style="border-bottom: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                <div style="font-weight: 600; color: var(--text-muted);">
+                    Area Operativa
+                </div>
+    
+                <div class="nm-topbar-right">
+                    <AuthorizeView>
+                        <Authorized>
+                            <a href="logout" class="nm-avatar-btn" style="text-decoration: none;" title="Clicca per disconnetterti">
+                                <span style="font-size: 14px; color: inherit;">@context.User.Identity?.Name</span>
+                                <div class="nm-avatar">
+                                    @(context.User.IsInRole("Admin") || context.User.IsInRole("admin") ? "A" : "M")
+                                </div>
+                            </a>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+            </header>
+
+            <article class="content p-4" style="overflow-y: auto;">
+                @Body
+            </article>
+        </main>
+
+    </div>
+</div>

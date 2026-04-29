@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="OfficinaManager/Officina.API.csproj" />
+  <Project Path="OfficinaManagerClient/Officina.Client.csproj" />
+  <Project Path="OffinicinaShared/OffinicinaShared.csproj" />
+</Solution>

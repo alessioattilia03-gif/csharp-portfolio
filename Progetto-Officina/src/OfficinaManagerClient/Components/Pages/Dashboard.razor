@@ -1,0 +1,472 @@
+﻿@page "/dashboard"
+@attribute [Authorize]
+
+<PageTitle>Dashboard</PageTitle>
+
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="nm-page-title">Dashboard</div>
+        <div class="nm-page-subtitle">Panoramica Interventi</div>
+    </div>
+
+    <div class="d-flex gap-3 align-items-center">
+        <div class="input-group nm-search-group">
+            <span class="input-group-text nm-search-icon">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control nm-input nm-search-input"
+                   placeholder="Cerca targa..."
+                   @bind="TestoRicerca" @bind:event="oninput">
+        </div>
+
+        <div class="nm-dropdown-wrapper">
+            <button class="nm-btn-filter" type="button" @onclick="ToggleMenuFiltro">
+                <i class="bi bi-funnel me-1"></i> Filtra
+            </button>
+            @if (menuFiltroAperto)
+            {
+                <ul class="nm-dropdown-menu">
+                    <li><button class="nm-dropdown-item" type="button" @onclick='() => SelezionaFiltro("")'>Mostra Tutti</button></li>
+                    <li><button class="nm-dropdown-item" type="button" @onclick='() => SelezionaFiltro("in corso")'>Solo In Corso</button></li>
+                    <li><button class="nm-dropdown-item" type="button" @onclick='() => SelezionaFiltro("da fare")'>Solo Da Fare</button></li>
+                    <li><button class="nm-dropdown-item" type="button" @onclick='() => SelezionaFiltro("completato")'>Solo Completati</button></li>
+                </ul>
+            }
+        </div>
+
+        <button class="nm-button nm-button-icon" @onclick="ApriModalNuovo">
+            <i class="bi bi-plus-lg me-1"></i> Nuovo
+        </button>
+    </div>
+</div>
+
+<hr class="nm-divider-clean" />
+
+<div class="nm-stats-grid">
+
+    <div class="nm-panel nm-panel-padded nm-stat-card">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="nm-badge nm-badge-muted">Interventi in Coda</div>
+            <i class="bi bi-tools nm-stat-icon"></i>
+        </div>
+        <div class="d-flex align-items-center mt-auto">
+            <div class="nm-stat-number">@interventiAttiviCount</div>
+            <div class="nm-card-divider"></div>
+            <div class="d-flex flex-column nm-stat-badges">
+                <span class="nm-badge nm-badge-in-corso nm-badge-sm">
+                    <i class="bi bi-play-circle me-1"></i> @inCorsoCount In Corso
+                </span>
+                <span class="nm-badge nm-badge-da-fare nm-badge-sm">
+                    <i class="bi bi-clock me-1"></i> @daFareCount Da Fare
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="nm-panel nm-panel-padded nm-stat-card nm-stat-card-clickable @(filtroStatoAttuale == "completato" ? "nm-stat-card-active-green" : "")"
+         @onclick='() => SelezionaFiltro(filtroStatoAttuale == "completato" ? "" : "completato")'>
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="nm-badge nm-badge-ok">Completati</div>
+            <i class="bi bi-check-circle nm-stat-icon nm-stat-icon-green"></i>
+        </div>
+        <div class="d-flex align-items-center mt-auto">
+            <div class="nm-stat-number nm-stat-number-green">@completatiCount</div>
+            <div class="nm-card-divider"></div>
+            <div class="nm-stat-hint">Clicca per<br>filtrare</div>
+        </div>
+    </div>
+
+    <AuthorizeView Roles="Admin,admin">
+        <Authorized>
+            <div class="nm-panel nm-panel-padded nm-stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="nm-badge nm-badge-muted mb-2">Veicoli</div>
+                    <i class="bi bi-car-front nm-stat-icon"></i>
+                </div>
+                <div class="nm-stat-number mt-auto">@veicoliTotaliCount</div>
+            </div>
+
+            <div class="nm-panel nm-panel-padded nm-stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="nm-badge nm-badge-muted mb-2">Clienti</div>
+                    <i class="bi bi-people nm-stat-icon"></i>
+                </div>
+                <div class="nm-stat-number mt-auto">@clientiTotaliCount</div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+<div class="nm-panel" style="padding: 0;">
+    <div style="padding: 22px 24px 16px;">
+        <div class="nm-section-title">Lista Interventi</div>
+    </div>
+
+    <div class="nm-table-wrapper">
+        <table class="nm-table">
+            <thead>
+                <tr class="nm-thead-row">
+                    <th class="nm-th-styled" style="padding-left: 20px;">Data Ingresso</th>
+                    <th class="nm-th-styled">Scadenza/Fine</th>
+                    <th class="nm-th-styled">Veicolo</th>
+                    <th class="nm-th-styled">Targa</th>
+                    <th class="nm-th-styled">Stato</th>
+                    <th class="nm-th-styled nm-td-action" style="padding-right: 20px;">Azione</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (interventiVisualizzati == null || !interventiVisualizzati.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="nm-empty-state">
+                                <i class="bi bi-inbox"></i> Nessun intervento trovato
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var intervento in interventiVisualizzati)
+                    {
+                        <tr class="nm-table-row">
+                            <td class="nm-td-compact nm-td-text" style="padding-left: 20px;">@intervento.DataIngresso.ToString("dd MMM yyyy")</td>
+                            <td class="nm-td-compact nm-td-text @(intervento.DataFine.HasValue ? "" : "nm-td-muted")">
+                                @(intervento.DataFine.HasValue ? intervento.DataFine.Value.ToString("dd MMM yyyy") : "—")
+                            </td>
+                            <td class="nm-td-compact nm-td-bold">@intervento.VeicoloInfo</td>
+                            <td class="nm-td-compact">
+                                <span class="nm-badge-targa">@intervento.VeicoloTarga</span>
+                            </td>
+                            <td class="nm-td-compact">
+                                <span class="nm-badge @GetBadgeClass(intervento.Stato)">
+                                    @FormattaStato(intervento.Stato)
+                                </span>
+                            </td>
+                            <td class="nm-td-compact nm-td-action" style="text-align: right; padding-right: 20px;">
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    <button class="nm-btn-action" @onclick="() => VaiADettaglio(intervento.CodicePub)">
+                                        Dettagli
+                                    </button>
+        
+                                    <AuthorizeView Roles="Admin,admin" Context="authContext">
+                                        <button class="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                                                style="border-radius: 8px; padding: 6px 12px; font-weight: 500; box-shadow: 0 2px 4px rgba(220,53,69,0.2);"
+                                                @onclick="() => ConfermaElimina(intervento.CodicePub)"
+                                                title="Elimina Intervento">
+                                            <i class="bi bi-trash3-fill"></i> Elimina
+                                        </button>
+                                    </AuthorizeView>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (mostraModal)
+{
+    <div class="nm-modal-overlay">
+        <div class="nm-panel nm-panel-padded nm-modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="nm-page-title nm-modal-title">Nuovo Intervento</div>
+            </div>
+
+            @if (erroreSalvataggio)
+            {
+                <div class="nm-error mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Errore durante il salvataggio. Verifica che la Targa esista in anagrafica.
+                </div>
+            }
+
+            <div class="d-flex gap-3">
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Targa Veicolo *</label>
+                    <input class="nm-input" type="text" placeholder="Es. AA123BB" @bind="nuovoIntervento.VeicoloTarga" style="text-transform: uppercase;" />
+                </div>
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Modello Auto</label>
+                    <input class="nm-input" type="text" placeholder="Es. Fiat Panda" @bind="nuovoIntervento.VeicoloInfo" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-3">
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Data Ingresso</label>
+                    <input class="nm-input" type="date" @bind="nuovoIntervento.DataIngresso" />
+                </div>
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Scadenza/Fine</label>
+                    <input class="nm-input" type="date" @bind="nuovoIntervento.DataFine" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-3">
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Stato Iniziale</label>
+                    <select class="nm-input" @bind="nuovoIntervento.Stato">
+                        <option value="da fare">Da Fare</option>
+                        <option value="in corso">In Corso</option>
+                    </select>
+                </div>
+                <div class="nm-input-group flex-grow-1">
+                    <label class="nm-label">Prezzo Stimato (€)</label>
+                    <input class="nm-input" type="number" step="0.01" @bind="nuovoIntervento.Prezzo" />
+                </div>
+            </div>
+
+            <div class="nm-input-group">
+                <label class="nm-label">Descrizione Problema *</label>
+                <textarea class="nm-input nm-textarea" rows="3" @bind="nuovoIntervento.Descrizione"></textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button class="nm-btn-ghost" @onclick="ChiudiModal" disabled="@isSaving">Annulla</button>
+                <button class="nm-button nm-button-icon" @onclick="SalvaIntervento" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    }
+                    Salva
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int interventiAttiviCount;
+    private int inCorsoCount;
+    private int daFareCount;
+    private int completatiCount;
+    private int veicoliTotaliCount;
+    private int clientiTotaliCount = 0;
+    
+    private List<InterventoDTO> ultimiInterventi = new();
+    private List<InterventoDTO> interventiVisualizzati = new();
+    
+    // variabile per mostrare messaggi semplici e umani all'utente
+    private string messaggioFeedback = "";
+
+    private string _testoRicerca = string.Empty;
+    public string TestoRicerca
+    {
+        get => _testoRicerca;
+        set
+        {
+            _testoRicerca = value;
+            ApplicaRicercaEFiltri();
+        }
+    }
+
+    private string filtroStatoAttuale = string.Empty;
+    private bool menuFiltroAperto = false;
+
+    private bool mostraModal = false;
+    private bool isSaving = false;
+    private bool erroreSalvataggio = false;
+    private InterventoDTO nuovoIntervento = new InterventoDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // carico tutto il necessario appena entro nel pannello di controllo
+        await CaricaDati();
+    } // fine inizializzazione dashboard
+
+    private async Task CaricaDati()
+    {
+        try
+        {
+            messaggioFeedback = "";
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            bool isAdmin = authState.User.IsInRole("Admin") || authState.User.IsInRole("admin");
+
+            // scarico tutti i lavori per far quadrare i numeri delle statistiche
+            IEnumerable<InterventoDTO>? datiRecuperati = await InterventoService.CercaTutti();
+
+            if (isAdmin)
+            {
+                // se sono admin scarico anche i totali di macchine e clienti
+                var veicoli = await VeicoloService.CercaTutti();
+                veicoliTotaliCount = veicoli?.Count() ?? 0;
+
+                var clienti = await ClienteService.CercaTutti();
+                clientiTotaliCount = clienti?.Count() ?? 0;
+            }
+
+            // ordino i lavori dal più recente al più vecchio
+            ultimiInterventi = datiRecuperati?.OrderByDescending(x => x.DataIngresso).ToList() ?? new List<InterventoDTO>();
+
+            // aggiorno i contatori che si vedono nei quadratini in alto
+            completatiCount = ultimiInterventi.Count(x => string.Equals(x.Stato, "completato", StringComparison.OrdinalIgnoreCase));
+            inCorsoCount = ultimiInterventi.Count(x => string.Equals(x.Stato, "in corso", StringComparison.OrdinalIgnoreCase));
+            daFareCount = ultimiInterventi.Count(x => string.Equals(x.Stato, "da fare", StringComparison.OrdinalIgnoreCase));
+            interventiAttiviCount = ultimiInterventi.Count(x => !string.Equals(x.Stato, "completato", StringComparison.OrdinalIgnoreCase));
+
+            // aggiorno la lista visibile applicando i filtri
+            ApplicaRicercaEFiltri();
+        }
+        catch (Exception ex)
+        {
+            // avviso se c'è un problema nel caricamento dei numeri della dashboard
+            messaggioFeedback = "ops! non sono riuscito a caricare le statistiche. prova a ricaricare.";
+            Console.WriteLine($"errore critico caricadati: {ex.Message}");
+        }
+    } // fine recupero dati e statistiche
+
+    private void ToggleMenuFiltro() => menuFiltroAperto = !menuFiltroAperto; // fine switch menu
+
+    private void SelezionaFiltro(string stato)
+    {
+        // cambio il filtro (es. solo quelli in corso) e ricarico la visualizzazione
+        filtroStatoAttuale = stato;
+        menuFiltroAperto = false;
+        ApplicaRicercaEFiltri();
+    } // fine selezione filtro stato
+
+    private void ApplicaRicercaEFiltri()
+    {
+        if (ultimiInterventi == null) return;
+
+        var query = ultimiInterventi.AsEnumerable();
+
+        // se ho scritto qualcosa nella barra di ricerca, filtro per targa
+        if (!string.IsNullOrWhiteSpace(_testoRicerca))
+        {
+            query = query.Where(x => x.VeicoloTarga != null && x.VeicoloTarga.Contains(_testoRicerca, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // filtro in base allo stato scelto (se vuoto mostro tutti quelli non completati)
+        if (!string.IsNullOrEmpty(filtroStatoAttuale))
+        {
+            query = query.Where(x => string.Equals(x.Stato, filtroStatoAttuale, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            query = query.Where(x => !string.Equals(x.Stato, "completato", StringComparison.OrdinalIgnoreCase));
+        }
+
+        // prendo i primi 20 risultati per non appesantire la pagina
+        interventiVisualizzati = query.Take(20).ToList();
+        StateHasChanged();
+    } // fine logica di filtraggio
+
+    private void ApriModalNuovo()
+    {
+        // preparo la maschera per segnare un nuovo lavoro in officina
+        messaggioFeedback = "";
+        erroreSalvataggio = false;
+        nuovoIntervento = new InterventoDTO
+        {
+            Stato = "da fare",
+            DataIngresso = DateTime.Now
+        };
+        mostraModal = true;
+    } // fine apertura modale nuovo lavoro
+
+    private void ChiudiModal() => mostraModal = false; // fine chiusura modale
+
+    private async Task SalvaIntervento()
+    {
+        isSaving = true;
+        erroreSalvataggio = false;
+        messaggioFeedback = "";
+
+        try
+        {
+            // provo a mandare il nuovo intervento al database
+            var successo = await InterventoService.Inserisci(nuovoIntervento);
+            if (successo)
+            {
+                // se va bene chiudo e ricarico tutto per aggiornare i grafici
+                messaggioFeedback = "perfetto! nuovo intervento registrato.";
+                mostraModal = false;
+                await CaricaDati();
+            }
+            else
+            {
+                // avviso se mancano dati o la targa non esiste
+                messaggioFeedback = "attenzione: non ho salvato l'intervento. controlla la targa o i campi obbligatori.";
+                erroreSalvataggio = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // messaggio di errore tecnico in caso di crash
+            messaggioFeedback = "accidenti, c'è stato un problema durante il salvataggio.";
+            erroreSalvataggio = true;
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    } // fine salvataggio nuovo intervento
+
+    private static string GetBadgeClass(string? stato)
+    {
+        // assegno il colore giusto al badge in base allo stato del lavoro
+        string s = stato ?? string.Empty;
+        if (string.Equals(s, "da fare", StringComparison.OrdinalIgnoreCase)) return "nm-badge-da-fare";
+        if (string.Equals(s, "in corso", StringComparison.OrdinalIgnoreCase)) return "nm-badge-in-corso";
+        if (string.Equals(s, "completato", StringComparison.OrdinalIgnoreCase)) return "nm-badge-completato";
+        return "nm-badge-muted";
+    } // fine classe css badge
+
+    private static string FormattaStato(string? stato)
+    {
+        // trasformo lo stato tecnico in qualcosa di leggibile per l'utente
+        string s = stato ?? string.Empty;
+        if (string.Equals(s, "da fare", StringComparison.OrdinalIgnoreCase)) return "Da Fare";
+        if (string.Equals(s, "in corso", StringComparison.OrdinalIgnoreCase)) return "In Corso";
+        if (string.Equals(s, "completato", StringComparison.OrdinalIgnoreCase)) return "Completato";
+        return "N/D";
+    } // fine formattazione testo stato
+
+    private void VaiADettaglio(string? codicePub)
+    {
+        // mando l'utente alla pagina di dettaglio del lavoro selezionato
+        if (!string.IsNullOrWhiteSpace(codicePub))
+        {
+            NavigationManager.NavigateTo($"/interventi/dettaglio/{codicePub}");
+        }
+    } // fine navigazione dettaglio
+
+    private async Task ConfermaElimina(string? codicePub)
+    {
+        if (string.IsNullOrWhiteSpace(codicePub)) return;
+
+        // chiedo conferma prima di cancellare per evitare errori accidentali
+        bool confermato = await JSRuntime.InvokeAsync<bool>("confirm",
+            new object[] { "sei proprio sicuro di voler cancellare questo intervento? l'azione non si può annullare." });
+
+        if (confermato)
+        {
+            try
+            {
+                // provo a rimuovere l'intervento dal sistema
+                var successo = await InterventoService.Elimina(codicePub);
+                if (successo)
+                {
+                    // se eliminato ricarico i dati per far sparire la riga e aggiornare i counter
+                    messaggioFeedback = "intervento rimosso correttamente.";
+                    await CaricaDati();
+                }
+                else
+                {
+                    messaggioFeedback = "non sono riuscito a eliminare questo intervento.";
+                }
+            }
+            catch (Exception ex)
+            {
+                messaggioFeedback = "errore tecnico durante l'eliminazione.";
+                Console.WriteLine($"errore: {ex.Message}");
+            }
+        }
+    } // fine eliminazione intervento
+}

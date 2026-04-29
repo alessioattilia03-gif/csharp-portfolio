@@ -1,0 +1,258 @@
+﻿@page "/interventi/dettaglio/{CodicePub}"
+@attribute [Authorize]
+@inject ILogger<DettaglioIntervento> Logger
+
+<PageTitle>Dettaglio Intervento</PageTitle>
+
+<div class="nm-page">
+    @if (isLoading)
+    {
+        <div class="nm-panel nm-loading-panel">
+            <div class="spinner-border text-warning mb-2" role="status"></div>
+            <p class="text-muted">Recupero dati dal server...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="nm-error">
+            <i class="bi bi-exclamation-triangle"></i> @errorMessage
+            <br />
+            <button class="nm-btn-action mt-3" @onclick="TornaIndietro">Torna alla Dashboard</button>
+        </div>
+    }
+    else if (intervento != null)
+    {
+        <div class="nm-panel nm-detail-header">
+            <div>
+                <div class="nm-badge nm-badge-muted mb-2">Scheda Intervento</div>
+                <h2 class="nm-page-title m-0">@intervento.VeicoloInfo</h2>
+                <div class="d-flex gap-3 mt-3 align-items-center flex-wrap">
+                    <span class="nm-badge-targa">@intervento.VeicoloTarga</span>
+                    <span class="nm-badge nm-badge-lg @GetBadgeClass(intervento.Stato)">
+                        @FormattaStato(intervento.Stato)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nm-panel">
+            <h4 class="nm-title mb-4">Dettagli Tecnici</h4>
+
+            <div class="nm-field-label">Descrizione del problema:</div>
+            <p class="nm-field-value mb-4">@intervento.Descrizione</p>
+
+            <div class="d-flex gap-5 mb-4 nm-detail-flex">
+                <div>
+                    <div class="nm-field-label">Data Ingresso:</div>
+                    <div class="nm-field-bold">@intervento.DataIngresso.ToShortDateString()</div>
+                </div>
+                <div>
+                    <div class="nm-field-label">Scadenza/Fine:</div>
+                    <div class="nm-field-bold">@(intervento.DataFine.HasValue ? intervento.DataFine.Value.ToShortDateString() : "Da definire")</div>
+                </div>
+                <div>
+                    <div class="nm-field-label">Prezzo Preventivato:</div>
+                    <div class="nm-field-price">
+                        @(intervento.Prezzo.HasValue && intervento.Prezzo > 0
+                            ? $"€ {intervento.Prezzo.Value:F2}"
+                            : "Da stimare")
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4 pt-4 nm-detail-actions">
+                <button class="nm-btn-action" @onclick="ApriModifica">
+                    <i class="bi bi-pencil me-1"></i> Modifica
+                </button>
+                <button class="nm-btn-ghost" @onclick="TornaIndietro">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (mostraModifica && interventoModifica != null)
+    {
+        <div class="nm-modal-overlay">
+            <div class="nm-panel nm-panel-padded nm-modal-box">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="nm-page-title nm-modal-title">Modifica Intervento</div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="nm-error mb-3"><i class="bi bi-exclamation-triangle me-2"></i> @errorMessage</div>
+                }
+
+                <div class="d-flex gap-3">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Data Ingresso</label>
+                        <input class="nm-input" type="date" @bind="interventoModifica.DataIngresso" />
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Scadenza/Fine</label>
+                        <input class="nm-input" type="date" @bind="interventoModifica.DataFine" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Stato</label>
+                        <select class="nm-input" @bind="interventoModifica.Stato">
+                            <option value="da fare">Da Fare</option>
+                            <option value="in corso">In Corso</option>
+                            <option value="completato">Completato</option>
+                        </select>
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Prezzo (€)</label>
+                        <input class="nm-input" type="number" step="0.01" @bind="interventoModifica.Prezzo" />
+                    </div>
+                </div>
+
+                <div class="nm-input-group">
+                    <label class="nm-label">Descrizione Problema</label>
+                    <textarea class="nm-input nm-textarea" rows="3" @bind="interventoModifica.Descrizione"></textarea>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-4">
+                    <button class="nm-btn-action" @onclick="ChiudiModifica" disabled="@isSaving">Annulla</button>
+                    <button class="nm-button nm-button-icon" @onclick="SalvaModifica" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Aggiorna
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string CodicePub { get; set; } = string.Empty;
+
+    private InterventoDTO? intervento;
+    private InterventoDTO? interventoModifica;
+    private bool isLoading = true;
+    
+    // qui salvo i messaggi da far leggere all'utente in modo semplice
+    private string errorMessage = string.Empty;
+
+    private bool mostraModifica = false;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // cerco subito i dettagli di questo lavoro appena entro nella pagina
+        await CaricaDati();
+    } // fine inizializzazione componente
+
+    private async Task CaricaDati()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        try
+        {
+            // chiamo il service per recuperare l'intervento tramite il codice dell'url
+            intervento = await InterventoService.CercaPerCodice(CodicePub);
+            
+            if (intervento == null)
+            {
+                // se il database non lo trova scrivo un messaggio chiaro invece dell'errore tecnico
+                errorMessage = "ops! non sono riuscito a trovare questo lavoro. controlla se il codice è giusto.";
+            }
+        }
+        catch (Exception ex)
+        {
+            // feedback amichevole se il server è offline o ci sono problemi di rete
+            errorMessage = "accidenti, il server non risponde. riprova a ricaricare la pagina tra un attimo!";
+            Logger.LogError(ex, "errore caricamento dettaglio intervento");
+        }
+        finally
+        {
+            // tolgo lo stato di caricamento così sparisce la rotellina
+            isLoading = false;
+        }
+    } // fine recupero dati intervento
+
+    private void ApriModifica()
+    {
+        if (intervento != null)
+        {
+            // copio i dati nell'oggetto di modifica per non sporcare quello originale mentre scrivo
+            interventoModifica = new InterventoDTO
+            {
+                CodicePub = intervento.CodicePub,
+                Descrizione = intervento.Descrizione,
+                Stato = intervento.Stato,
+                Prezzo = intervento.Prezzo,
+                DataIngresso = intervento.DataIngresso,
+                DataFine = intervento.DataFine,
+                VeicoloCodicePub = intervento.VeicoloCodicePub
+            };
+            mostraModifica = true;
+        }
+    } // fine preparazione modale modifica
+
+    private void ChiudiModifica() => mostraModifica = false; // fine chiusura modale
+
+    private async Task SalvaModifica()
+    {
+        if (interventoModifica == null) return;
+        isSaving = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // mando i nuovi dati al service per aggiornare il db
+            var successo = await InterventoService.Aggiorna(interventoModifica);
+            
+            if (successo) 
+            { 
+                // se va bene chiudo la modale e ricarico i dati freschi dal server
+                mostraModifica = false; 
+                await CaricaDati(); 
+            }
+            else 
+            {
+                // avviso l'utente se il salvataggio è fallito per qualche motivo logico
+                errorMessage = "non sono riuscito a salvare le modifiche. riprova a premere il tasto salva.";
+            }
+        }
+        catch (Exception ex)
+        {
+            // errore in caso di crash del sistema o problemi imprevisti
+            errorMessage = "c'è stato un problema tecnico imprevisto. se continua a succedere avvisa l'amministratore.";
+            Logger.LogError(ex, "errore aggiornamento intervento");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    } // fine salvataggio modifiche
+
+    private void TornaIndietro() => NavigationManager.NavigateTo("/dashboard"); // fine navigazione
+
+    private static string GetBadgeClass(string? stato)
+    {
+        // assegno il colore giusto al badge in base allo stato del lavoro
+        string s = stato ?? string.Empty;
+        if (string.Equals(s, "da fare", StringComparison.OrdinalIgnoreCase)) return "nm-badge-da-fare";
+        if (string.Equals(s, "in corso", StringComparison.OrdinalIgnoreCase)) return "nm-badge-in-corso";
+        if (string.Equals(s, "completato", StringComparison.OrdinalIgnoreCase)) return "nm-badge-completato";
+        return "nm-badge-muted";
+    } // fine calcolo classe css badge
+
+    private static string FormattaStato(string? stato)
+    {
+        // trasformo lo stato tecnico in qualcosa di leggibile con le maiuscole giuste
+        string s = stato ?? string.Empty;
+        if (string.Equals(s, "da fare", StringComparison.OrdinalIgnoreCase)) return "Da Fare";
+        if (string.Equals(s, "in corso", StringComparison.OrdinalIgnoreCase)) return "In Corso";
+        if (string.Equals(s, "completato", StringComparison.OrdinalIgnoreCase)) return "Completato";
+        return "N/D";
+    } // fine formattazione testo stato
+}

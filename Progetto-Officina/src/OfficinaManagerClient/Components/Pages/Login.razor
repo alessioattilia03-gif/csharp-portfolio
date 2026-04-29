@@ -1,0 +1,127 @@
+﻿@page "/"
+@page "/login"
+@layout EmptyLayout
+
+<PageTitle>Login — Gestione Officina</PageTitle>
+
+<div class="nm-login-wrapper">
+    <div class="nm-card">
+
+        <div class="nm-icon-button">
+            <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round" />
+            </svg>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="LoginForm">
+            <DataAnnotationsValidator />
+
+            <div class="nm-input-group">
+                <InputText @bind-Value="loginModel.Username"
+                           class="nm-input"
+                           placeholder="Username" />
+                <ValidationMessage For="@(() => loginModel.Username)" />
+            </div>
+
+            <div class="nm-input-group">
+                <InputText @bind-Value="loginModel.Password"
+                           type="password"
+                           class="nm-input"
+                           placeholder="Password" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="nm-error">⚠ @errorMessage</div>
+            }
+
+            <button type="submit" class="nm-button">Accedi</button>
+
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginRequest loginModel { get; set; } = new();
+
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        // resetto il messaggio di errore ogni volta che l'utente clicca sul tasto login
+        errorMessage = null;
+        Console.WriteLine("tentativo di login avviato...");
+
+        try
+        {
+            // mando i dati del form all'api di autenticazione e aspetto la risposta
+            var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
+
+            Console.WriteLine($"status code: {response.StatusCode}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // se i dati sono corretti leggo il token jwt contenuto nella risposta
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+                if (result == null)
+                {
+                    errorMessage = "risposta vuota dal server.";
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(result.Token))
+                {
+                    errorMessage = "token non ricevuto.";
+                    return;
+                }
+
+                // imposto il token nell'header delle chiamate http così il server sa chi siamo
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
+
+                Console.WriteLine("login riuscito!");
+
+                // avviso il provider di blazor che l'utente è loggato per sbloccare i permessi
+                var authProvider = (Services.CustomAuthStateProvider)AuthStateProvider;
+                authProvider.MarkUserAsAuthenticated(result.Token);
+
+                // aspetto un attimo per sicurezza e poi mando l'utente sulla dashboard
+                await Task.Delay(100);
+                NavigationManager.NavigateTo("/dashboard");
+            }
+            else
+            {
+                // invece di stampare tutto il json tecnico, metto dei messaggi amichevoli
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    errorMessage = "per favore, inserisci sia username che password.";
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    errorMessage = "credenziali non valide. riprova.";
+                }
+                else
+                {
+                    errorMessage = "si è verificato un errore durante il login.";
+                }
+            }
+        }
+        catch (NavigationException)
+        {
+            // lascio passare le eccezioni di navigazione altrimenti blazor si blocca
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // se succede un casino imprevisto (tipo server offline) lo scrivo in console
+            errorMessage = "errore critico: " + ex.Message;
+            Console.WriteLine(ex.ToString());
+        }
+    } // fine gestione login e reindirizzamento dashboard
+}

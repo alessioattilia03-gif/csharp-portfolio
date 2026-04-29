@@ -1,0 +1,15 @@
+﻿@page "/logout"
+@attribute [AllowAnonymous]
+
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (AuthStateProvider is Officina.Client.Services.CustomAuthStateProvider customProvider)
+        {
+            customProvider.MarkUserAsLoggedOut();
+        }
+
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
+}

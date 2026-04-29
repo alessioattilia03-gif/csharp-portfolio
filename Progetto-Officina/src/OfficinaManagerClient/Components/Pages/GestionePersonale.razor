@@ -1,0 +1,313 @@
+﻿@page "/GestionePersonale"
+@attribute [Authorize(Roles = "Admin,admin")]
+@inject ILogger<GestionePersonale> Logger
+
+<PageTitle>Gestione Personale</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="nm-page-title">Gestione Autorizzazioni</div>
+    </div>
+
+    <button class="nm-button nm-button-icon m-0" @onclick="ApriModalNuovo">
+        <i class="bi bi-person-plus-fill"></i> Nuovo Account
+    </button>
+</div>
+
+<hr class="nm-divider-clean" />
+
+<div class="nm-panel" style="padding: 0;">
+    <div class="nm-table-wrapper">
+        <table class="nm-table">
+            <thead>
+                <tr class="nm-thead-row">
+                    <th class="nm-th-styled" style="width: 250px;">Utente</th>
+                    <th class="nm-th-styled" style="width: 200px;">Contatti</th>
+                    <th class="nm-th-styled">Ruolo</th>
+                    <th class="nm-th-styled nm-td-action" style="text-align: right; width: 190px;">Azione</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (utentiVisualizzati == null || !utentiVisualizzati.Any())
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="nm-empty-state">
+                                <i class="bi bi-shield-lock"></i>
+                                Nessun utente registrato
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var utente in utentiVisualizzati)
+                    {
+                        <tr class="nm-table-row">
+                            <td class="nm-td-compact">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="nm-avatar-initials" style="background: var(--primary-light); color: var(--primary-color);">
+                                        @(utente.Username.Length > 0 ? utente.Username[0].ToString().ToUpper() : "?")
+                                    </div>
+                                    <div>
+                                        <div class="nm-td-bold">@utente.Username</div>
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                            Cod: @utente.CodicePub
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="nm-td-compact">
+                                @* Visualizzazione Email *@
+                                <div class="nm-contact-line">
+                                    <i class="bi bi-envelope"></i>
+                                    <span>@(string.IsNullOrWhiteSpace(utente.Email) ? "—" : utente.Email)</span>
+                                </div>
+                                @* Visualizzazione Telefono *@
+                                <div class="nm-contact-line nm-contact-secondary" style="margin-top: 4px;">
+                                    <i class="bi bi-telephone"></i>
+                                    <span>@(string.IsNullOrWhiteSpace(utente.Telefono) ? "—" : utente.Telefono)</span>
+                                </div>
+                            </td>
+                            <td class="nm-td-compact">
+                                @if (utente.Ruolo.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="nm-badge" style="background: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2);">
+                                        Amministratore
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="nm-badge nm-badge-muted" style="font-weight:700; font-size:10px; text-transform:uppercase;">
+                                        Meccanico
+                                    </span>
+                                }
+                            </td>
+                            <td class="nm-td-compact nm-td-action" style="text-align: right;">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="nm-btn-action" @onclick="() => ApriModalModifica(utente)">
+                                        <i class="bi bi-pencil-square"></i> Modifica
+                                    </button>
+                                    <button class="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                                            style="border-radius: 8px; padding: 6px 12px; font-weight: 500; box-shadow: 0 2px 4px rgba(220,53,69,0.2);"
+                                            @onclick="() => EliminaUtente(utente.CodicePub)">
+                                        <i class="bi bi-trash3-fill"></i> Elimina
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (mostraModal)
+{
+    <div class="nm-modal-overlay">
+        <div class="nm-panel nm-panel-padded nm-modal-box">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="nm-page-title nm-modal-title">
+                    @(isEditing ? "Modifica Account" : "Nuovo Account Personale")
+                </div>
+            </div>
+
+            @if (erroreSalvataggio)
+            {
+                <div class="nm-error mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Errore di comunicazione con il server.
+                </div>
+            }
+
+            <EditForm Model="nuovoUtente" OnValidSubmit="SalvaUtente">
+                <DataAnnotationsValidator />
+
+                <div class="nm-input-group mb-3">
+                    <label class="nm-label">Username *</label>
+                    <InputText @bind-Value="nuovoUtente.Username" class="nm-input" required />
+                    <ValidationMessage For="@(() => nuovoUtente.Username)" style="color: var(--danger-text); font-size: 12px;" />
+                </div>
+
+                @* Campi Contatti: Email e Telefono *@
+                <div class="d-flex gap-3 mb-3">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Email</label>
+                        <InputText type="email" @bind-Value="nuovoUtente.Email" class="nm-input" />
+                        <ValidationMessage For="@(() => nuovoUtente.Email)" style="color: var(--danger-text); font-size: 12px;" />
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Telefono</label>
+                        <InputText @bind-Value="nuovoUtente.Telefono" class="nm-input" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mb-4">
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Password @(isEditing ? "(Vuota = inalterata)" : "*")</label>
+                        <InputText type="password" @bind-Value="nuovoUtente.Password" class="nm-input" required="@(!isEditing)" />
+                    </div>
+                    <div class="nm-input-group flex-grow-1">
+                        <label class="nm-label">Ruolo di Sistema</label>
+                        <InputSelect @bind-Value="nuovoUtente.Ruolo" class="nm-input">
+                            <option value="Meccanico">Meccanico</option>
+                            <option value="Admin">Amministratore</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border);">
+                    <button type="button" class="nm-btn-ghost" @onclick="ChiudiModal" disabled="@isSaving">Annulla</button>
+                    <button type="submit" class="nm-button nm-button-icon" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        @(isEditing ? "Aggiorna Account" : "Crea Account")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UtenteDTO> utentiVisualizzati = new();
+    
+    private bool mostraModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private bool erroreSalvataggio = false;
+    private UtenteDTO nuovoUtente = new();
+    
+    // questa variabile serve per scrivere messaggi chiari all'utente sullo schermo
+    private string messaggioFeedback = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // quando la pagina si carica scarico subito la lista dei colleghi
+        await CaricaDati();
+    } // fine inizializzazione pagina
+
+    private async Task CaricaDati()
+    {
+        try
+        {
+            // chiamo il service per prendere tutti gli utenti e li metto nella lista della tabella
+            var dati = await UtenteService.OttieniTutti();
+            utentiVisualizzati = dati?.ToList() ?? new List<UtenteDTO>();
+        }
+        catch (Exception ex)
+        {
+            // se c'è un problema avviso l'utente che non sono riuscito a caricare i dati
+            messaggioFeedback = "ops! non sono riuscito a caricare la lista del personale. riprova tra un po'.";
+            Logger.LogError(ex, "errore nel caricamento del personale");
+            utentiVisualizzati = new List<UtenteDTO>();
+        }
+    } // fine recupero dati personale
+
+    private void ApriModalNuovo()
+    {
+        // resetto tutto per creare un nuovo account partendo da zero e pulisco i messaggi vecchi
+        messaggioFeedback = "";
+        erroreSalvataggio = false;
+        isEditing = false;
+        nuovoUtente = new UtenteDTO { Ruolo = "Meccanico" };
+        mostraModal = true;
+    } // fine preparazione nuovo utente
+
+    private void ApriModalModifica(UtenteDTO utenteDaModificare)
+    {
+        // preparo la modale per la modifica caricando i dati dell'utente selezionato
+        messaggioFeedback = "";
+        erroreSalvataggio = false;
+        isEditing = true;
+        
+        nuovoUtente = new UtenteDTO
+        {
+            CodicePub = utenteDaModificare.CodicePub,
+            Username = utenteDaModificare.Username,
+            Email = utenteDaModificare.Email,
+            Telefono = utenteDaModificare.Telefono,
+            Ruolo = utenteDaModificare.Ruolo,
+            Password = "" // la password la lasciamo vuota per sicurezza
+        };
+        
+        mostraModal = true;
+    } // fine preparazione modifica utente
+
+    private void ChiudiModal()
+    {
+        // chiudo semplicemente il popup senza salvare nulla
+        mostraModal = false;
+    } // fine chiusura modale
+
+    private async Task SalvaUtente()
+    {
+        isSaving = true;
+        erroreSalvataggio = false;
+        messaggioFeedback = "";
+        
+        try
+        {
+            // se sto editando chiamo l'aggiorna, altrimenti faccio una nuova registrazione
+            bool successo = isEditing
+                ? await UtenteService.Aggiorna(nuovoUtente)
+                : await UtenteService.Registra(nuovoUtente);
+
+            if (successo)
+            {
+                // se va bene confermo l'operazione, chiudo tutto e ricarico la tabella
+                messaggioFeedback = "ottimo! i dati sono stati salvati correttamente.";
+                mostraModal = false;
+                await CaricaDati();
+            }
+            else
+            {
+                // se il server dice di no avviso l'utente di controllare i campi
+                messaggioFeedback = "attenzione: non è stato possibile salvare. controlla se hai compilato tutto bene.";
+                erroreSalvataggio = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // messaggio amichevole in caso di errore tecnico del server
+            messaggioFeedback = "accidenti, c'è stato un problema tecnico durante il salvataggio.";
+            Logger.LogError(ex, "errore durante il salvataggio dell'account personale");
+            erroreSalvataggio = true;
+        }
+        finally
+        {
+            // riabilito il bottone salva togliendo lo stato di caricamento
+            isSaving = false;
+        }
+    } // fine logica di salvataggio/aggiornamento
+
+    private async Task EliminaUtente(string? codicePub)
+    {
+        // controllo che il codice sia valido prima di provare a cancellare
+        if (string.IsNullOrWhiteSpace(codicePub)) return;
+
+        try
+        {
+            // chiamo il service per eliminare l'utente dal database
+            var successo = await UtenteService.Elimina(codicePub);
+            if (successo)
+            {
+                // se l'eliminazione funziona avviso l'utente e ricarico la lista
+                messaggioFeedback = "utente rimosso con successo.";
+                await CaricaDati();
+            }
+            else
+            {
+                messaggioFeedback = "non è stato possibile eliminare l'utente. forse è già stato rimosso?";
+            }
+        }
+        catch (Exception ex)
+        {
+            // feedback in caso di errore imprevisto durante l'eliminazione
+            messaggioFeedback = "errore: non sono riuscito a eliminare l'account selezionato.";
+            Logger.LogError(ex, "errore durante l'eliminazione dell'account {codice}", codicePub);
+        }
+    } // fine eliminazione utente
+}

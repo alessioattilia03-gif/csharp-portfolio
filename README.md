@@ -85,8 +85,7 @@ OfficinaManager/
 
 ## 📁 Repository Esercitazioni
 
-### Modulo I · Fondamenti C#
-D:\ALESSIO_PERSONALE_2\Programmazione\LAV\OfficinaNew
+### Fondamenti C#
 ```
 📁 /Exercise/01-logic-and-data-structures/
 ├── AIScanner-Logic/        → Operatori logici (and, or, not) e relazionali

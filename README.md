@@ -54,7 +54,7 @@ OfficinaManager/
 - 🔐 **Login sicuro** con token JWT e gestione centralizzata delle policy
 - 🛠️ **Gestione interventi** meccanici con storico e stato avanzamento
 - 👥 **Controllo accessi** per ruolo, con risorse protette per gli amministratori
-- 🗄️ **Schema relazionale** generato automaticamente dalle classi C# (Code-First)
+- 🗄️ **DB FIRST** 
 
 ### Galleria Interfaccia
 

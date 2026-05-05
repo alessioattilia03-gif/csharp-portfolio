@@ -45,7 +45,7 @@ OfficinaManager/
 | Area | Dettaglio |
 |------|-----------|
 | **Architettura** | Soluzione a livelli con API REST, Client Blazor e Shared Models |
-| **Database & ORM** | Code-First con Entity Framework Core su SQL Server |
+| **Database & ORM** | DB-First con Entity Framework Core su SQL Server |
 | **Autenticazione** | JWT (JSON Web Token) con chiavi gestite via `appsettings.json` |
 | **Autorizzazione** | RBAC con ruoli differenziati: `Amministratore` e `Meccanico` |
 

@@ -72,14 +72,14 @@ OfficinaManager/
 
 ---
 
-## 📚 Percorso Didattico
+## 📚 Percorso Didattico Del Corso
 
 | # | Modulo | Argomenti | Stato |
 |---|--------|-----------|-------|
 | I | **Fondamenti C#** | Logica, tipi di dato, strutture di controllo, cicli, array, metodi | ✅ Completato |
 | II | **OOP** | Classi, ereditarietà, polimorfismo, interfacce, eccezioni | ✅ Completato |
 | III | **Dati & File** | StreamReader/Writer, serializzazione JSON/XML, file system | ✅ Completato |
-| IV | **ASP.NET Core** | MVC, API REST, Entity Framework Core, autenticazione JWT | ✅ Completato |
+| IV | **ASP.NET Core** | MVC, API REST, Entity Framework Core, autenticazione JWT, Blazor, Maui| ✅ Completato |
 
 ---
 
